@@ -1,7 +1,9 @@
-
 package Services
 
 import (
+	"bytes"
+	"encoding/gob"
+	"fmt"
 	"time"
 )
 
@@ -33,4 +35,32 @@ func NewBlock(data string, previousBlockHash []byte) *Block {
 
 func NewGenesisBlock() *Block {
 	return NewBlock("Genesis Block", []byte{})
+}
+
+func (block *Block) Serialize() []byte {
+	var result bytes.Buffer
+	encoder := gob.NewEncoder(&result)
+
+	err := encoder.Encode(block)
+
+	if err != nil {
+		fmt.Println("Error encoding block")
+		panic(err)
+	}
+
+	return result.Bytes()
+}
+
+func DeserializeBlock(data []byte) *Block {
+	var block Block
+
+	decoder := gob.NewDecoder(bytes.NewReader(data))
+	err := decoder.Decode(&block)
+	
+	if err != nil {
+		fmt.Println("Error decoding block")
+		panic(err)
+	}
+
+	return &block
 }
