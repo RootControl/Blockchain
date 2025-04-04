@@ -68,26 +68,17 @@ func GetLastHashFromDb(blockchain *Entities.Blockchain) []byte {
 	return lastHash
 }
 
-func GetAllBlocksFromDb(blockchain *Entities.Blockchain) [][]byte {
-	var blocks [][]byte
+func GetBlockFromDb(database *bolt.DB, hash []byte) []byte {
+	var block []byte
 
-	blockchain.Db.View(
+	database.View(
 		func(tx *bolt.Tx) error {
 			bucket := tx.Bucket([]byte(blockBucket))
-
-			bucket.ForEach(
-				func(key, value []byte) error {
-					// Skip the "l" key which stores the last hash
-					if string(key) != "l" {
-						blocks = append(blocks, value)
-					}
-					return nil
-				},
-			)
+			block = bucket.Get(hash)
 
 			return nil
 		},
 	)
 
-	return blocks
+	return block
 }

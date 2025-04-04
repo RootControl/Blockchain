@@ -22,16 +22,3 @@ func AddDataToBlockchain(blockchain *Entities.Blockchain, data string) {
 	
 	Repositories.SaveBlockInDb(blockchain, newBlock)
 }
-
-func GetAllBlocks(blockchain *Entities.Blockchain) []*Entities.Block {
-	var blocks []*Entities.Block
-
-	blocksData := Repositories.GetAllBlocksFromDb(blockchain)
-
-	for _, blockData := range blocksData {
-		block := DeserializeBlock(blockData)
-		blocks = append(blocks, block)
-	}
-
-	return blocks
-}
