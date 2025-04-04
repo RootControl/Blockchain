@@ -9,6 +9,7 @@ import (
 func main() {
 	blockchain := Services.NewBlockchain()
 
+	// TODO: alter way to add blocks
 	blockchain.AddBlock("Send 1 BTC to Ivan")
 	blockchain.AddBlock("Send 2 more BTC to Ivan")
 

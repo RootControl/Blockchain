@@ -3,25 +3,22 @@ package Services
 import (
 	"bytes"
 	"encoding/gob"
-	"fmt"
 	"time"
+	"Blockchain/src/Entities"
 )
 
-type Block struct {
-	Timestamp int64
-	Data []byte
-	PreviousBlockHash []byte
-	Hash []byte
-	Nonce int
+func NewGenesisBlock() *Entities.Block {
+	return NewBlock("Genesis Block", []byte{})
 }
 
-func NewBlock(data string, previousBlockHash []byte) *Block {
-	block := &Block {
-		time.Now().Unix(),
-		[]byte(data),
-		previousBlockHash,
-		[]byte{},
-		0,
+// TODO: remove previousBlockHash from the function
+func NewBlock(data string, previousBlockHash []byte) *Entities.Block {
+	block := &Entities.Block {
+		Timestamp: time.Now().Unix(),
+		Data:[]byte(data),
+		PreviousBlockHash: previousBlockHash,
+		Hash: []byte{},
+		Nonce:0,
 	}
 
 	pow := CreateProofOfWork(block)
@@ -33,32 +30,26 @@ func NewBlock(data string, previousBlockHash []byte) *Block {
 	return block
 }
 
-func NewGenesisBlock() *Block {
-	return NewBlock("Genesis Block", []byte{})
-}
-
-func (block *Block) Serialize() []byte {
+func SerializeBlock(block *Entities.Block) []byte {
 	var result bytes.Buffer
 	encoder := gob.NewEncoder(&result)
 
 	err := encoder.Encode(block)
 
 	if err != nil {
-		fmt.Println("Error encoding block")
 		panic(err)
 	}
 
 	return result.Bytes()
 }
 
-func DeserializeBlock(data []byte) *Block {
-	var block Block
+func DeserializeBlock(data []byte) *Entities.Block {
+	var block Entities.Block
 
 	decoder := gob.NewDecoder(bytes.NewReader(data))
 	err := decoder.Decode(&block)
 	
 	if err != nil {
-		fmt.Println("Error decoding block")
 		panic(err)
 	}
 

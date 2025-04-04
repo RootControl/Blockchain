@@ -1,16 +1,11 @@
 package Services
 
-type Blockchain struct {
-	Blocks []*Block
-}
+import (
+	"Blockchain/src/Entities"
+)
 
-func (blockchain *Blockchain) AddBlock(data string) {
-	previousBlock := blockchain.Blocks[len(blockchain.Blocks)-1]
-	newBlock := NewBlock(data, previousBlock.Hash)
-
-	blockchain.Blocks = append(blockchain.Blocks, newBlock)
-}
-
-func NewBlockchain() *Blockchain {
-	return &Blockchain{[]*Block{NewGenesisBlock()}}
+func NewBlockchain() *Entities.Blockchain {
+	return &Entities.Blockchain{
+		Blocks: []*Entities.Block{NewGenesisBlock()},
+	}
 }
