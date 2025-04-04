@@ -30,19 +30,6 @@ func NewBlock(data string, previousBlockHash []byte) *Entities.Block {
 	return block
 }
 
-func SerializeBlock(block *Entities.Block) []byte {
-	var result bytes.Buffer
-	encoder := gob.NewEncoder(&result)
-
-	err := encoder.Encode(block)
-
-	if err != nil {
-		panic(err)
-	}
-
-	return result.Bytes()
-}
-
 func DeserializeBlock(data []byte) *Entities.Block {
 	var block Entities.Block
 
