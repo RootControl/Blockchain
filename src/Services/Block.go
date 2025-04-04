@@ -31,8 +31,11 @@ func NewBlock(data string, previousBlockHash []byte) *Entities.Block {
 }
 
 func DeserializeBlock(data []byte) *Entities.Block {
-	var block Entities.Block
+	if len(data) == 0 {
+		return nil
+	}
 
+	var block Entities.Block
 	decoder := gob.NewDecoder(bytes.NewReader(data))
 	err := decoder.Decode(&block)
 	

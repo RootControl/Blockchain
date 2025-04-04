@@ -6,12 +6,13 @@ import (
 )
 
 func IterateNextBlock(iterator *Entities.BlockchainIterator) *Entities.Block {	
-	var block *Entities.Block
-
-	bockBytes := Repositories.GetBlockFromDb(iterator.Db, iterator.CurrentHash)
-	block = DeserializeBlock(bockBytes)
+	blockBytes := Repositories.GetBlockFromDb(iterator.Db, iterator.CurrentHash)
 	
+	if blockBytes == nil {
+		return nil
+	}
+	
+	block := DeserializeBlock(blockBytes)
 	iterator.CurrentHash = block.PreviousBlockHash
-
 	return block
 }
