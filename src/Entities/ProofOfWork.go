@@ -3,6 +3,7 @@ package Entities
 import (
 	"bytes"
 	"crypto/sha256"
+	"fmt"
 	"math"
 	"math/big"
 	"strconv"
@@ -30,7 +31,7 @@ func (pow *ProofOfWork) PrepareData(nonce int) []byte {
 	data := bytes.Join(
 		[][]byte {
 			pow.Block.PreviousBlockHash,
-			pow.Block.Data,
+			pow.Block.HashTransactions(),
 			IntToHex(pow.Block.Timestamp),
 			IntToHex(int64(TargetBits)),
 			IntToHex(int64(nonce)),
@@ -57,6 +58,7 @@ func (pow *ProofOfWork) Run() (int, []byte) {
 		hashInt.SetBytes(hash[:])
 
 		if hashInt.Cmp(pow.Target) == -1 {
+			fmt.Printf("%x\n", hash)
 			break
 		}
 		

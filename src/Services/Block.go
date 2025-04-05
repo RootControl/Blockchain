@@ -7,15 +7,15 @@ import (
 	"Blockchain/src/Entities"
 )
 
-func NewGenesisBlock() *Entities.Block {
-	return NewBlock("Genesis Block", []byte{})
+func NewGenesisBlock(coinbase *Entities.Transaction) *Entities.Block {
+	return NewBlock([]*Entities.Transaction{coinbase}, []byte{})
 }
 
 // TODO: remove previousBlockHash from the function
-func NewBlock(data string, previousBlockHash []byte) *Entities.Block {
+func NewBlock(transactions []*Entities.Transaction, previousBlockHash []byte) *Entities.Block {
 	block := &Entities.Block {
 		Timestamp: time.Now().Unix(),
-		Data:[]byte(data),
+		Transactions: transactions,
 		PreviousBlockHash: previousBlockHash,
 		Hash: []byte{},
 		Nonce:0,

@@ -2,12 +2,13 @@ package Entities
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/gob"
 )
 
 type Block struct {
 	Timestamp         int64
-	Data              []byte
+	Transactions      []*Transaction
 	PreviousBlockHash []byte
 	Hash              []byte
 	Nonce             int
@@ -24,4 +25,16 @@ func (block *Block) Serialize() []byte {
 	}
 
 	return result.Bytes()
+}
+
+func (block *Block) HashTransactions() []byte {
+	var transactionHashes [][]byte
+
+	for _, transaction := range block.Transactions {
+		transactionHashes = append(transactionHashes, transaction.Id)
+	}
+
+	transactionHash := sha256.Sum256(bytes.Join(transactionHashes, []byte{}))
+
+	return transactionHash[:]
 }

@@ -16,7 +16,3 @@ type TransactionOutput struct {
 	Value int
 	PubKey string
 }
-
-func (transaction *Transaction) SetId() {
-	// transaction.Id = []byte{}
-}

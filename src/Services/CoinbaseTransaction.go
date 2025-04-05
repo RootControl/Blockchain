@@ -24,11 +24,10 @@ func NewCoinbaseTransaction(to, data string) *Entities.Transaction {
 	}
 
 	transaction := Entities.Transaction {
+		Id: []byte{},
 		Inputs: []Entities.TransactionInput{transactionInput},
 		Outputs: []Entities.TransactionOutput{transactionOutput},
 	}
-
-	transaction.SetId()
 
 	return &transaction
 }

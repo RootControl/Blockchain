@@ -5,8 +5,13 @@ import (
 	"Blockchain/src/Repositories"
 )
 
-func NewBlockchain() *Entities.Blockchain {
-	genesisBlock := NewGenesisBlock()
+const genesisCoinbaseData = "In the grim darkness of the far future, there is only war!"
+
+func NewBlockchain(address string) *Entities.Blockchain {
+	// Creates the first transaction in the blockchain
+	coinbaseTransaction := NewCoinbaseTransaction(address, genesisCoinbaseData)
+
+	genesisBlock := NewGenesisBlock(coinbaseTransaction)
 	lastHash, db := Repositories.SaveGenesisBlockInDb(genesisBlock)
 
 	return &Entities.Blockchain {
@@ -17,8 +22,9 @@ func NewBlockchain() *Entities.Blockchain {
 
 func AddDataToBlockchain(blockchain *Entities.Blockchain, data string) {
 	lastHash := Repositories.GetLastHashFromDb(blockchain)
-	
-	newBlock := NewBlock(data, lastHash)
+	transaction := NewCoinbaseTransaction("", data)
+
+	newBlock := NewBlock([]*Entities.Transaction{transaction}, lastHash)
 	
 	Repositories.SaveBlockInDb(blockchain, newBlock)
 }
