@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"bytes"
+	"encoding/gob"
 	"time"
 )
 
@@ -26,4 +28,26 @@ func NewBlock(data string, prevBlockHash []byte) *Block {
 	block.Nonce = nonce
 
 	return block
+}
+
+func NewGenesisBlock() *Block {
+	return NewBlock("Genesis Block", []byte{})
+}
+
+func (block *Block) Serialize() []byte {
+	var result bytes.Buffer
+	encoder := gob.NewEncoder(&result)
+
+	encoder.Encode(block)
+
+	return result.Bytes()
+}
+
+func DeserializeBLock(data []byte) *Block {
+	var block Block
+
+	decoder :=gob.NewDecoder(bytes.NewReader(data))
+	decoder.Decode(&block)
+
+	return &block
 }
