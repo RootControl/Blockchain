@@ -2,22 +2,23 @@ package domain
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/gob"
 	"time"
 )
 
 type Block struct {
 	Timestamp     int64
-	Data          []byte
+	Transactions  []*Transaction
 	PrevBlockHash []byte
 	Hash          []byte
 	Nonce         int
 }
 
-func NewBlock(data string, prevBlockHash []byte) *Block {
-	block := &Block {
-		Timestamp: time.Now().Unix(),
-		Data: []byte(data),
+func NewBlock(transactions []*Transaction, prevBlockHash []byte) *Block {
+	block := &Block{
+		Timestamp:     time.Now().Unix(),
+		Transactions:  transactions,
 		PrevBlockHash: prevBlockHash,
 	}
 
@@ -30,8 +31,8 @@ func NewBlock(data string, prevBlockHash []byte) *Block {
 	return block
 }
 
-func NewGenesisBlock() *Block {
-	return NewBlock("Genesis Block", []byte{})
+func NewGenesisBlock(coinbase *Transaction) *Block {
+	return NewBlock([]*Transaction{coinbase}, []byte{})
 }
 
 func (block *Block) Serialize() []byte {
@@ -46,8 +47,20 @@ func (block *Block) Serialize() []byte {
 func DeserializeBLock(data []byte) *Block {
 	var block Block
 
-	decoder :=gob.NewDecoder(bytes.NewReader(data))
+	decoder := gob.NewDecoder(bytes.NewReader(data))
 	decoder.Decode(&block)
 
 	return &block
+}
+
+func (block *Block) HashTransactions() []byte {
+	var txHashes [][]byte
+
+	for _, tx := range block.Transactions {
+		txHashes = append(txHashes, tx.Id)
+	}
+
+	txHash := sha256.Sum256(bytes.Join(txHashes, []byte{}))
+
+	return txHash[:]
 }
