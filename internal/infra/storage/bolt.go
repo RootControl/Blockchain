@@ -5,19 +5,31 @@ import (
 	"github.com/rootcontrol/blockchain/internal/domain"
 )
 
+type BoltRepository struct {
+	db *bolt.DB
+}
+
 const (
 	dbFile       = "blockchain.db"
 	blocksBucket = "blocks"
 )
 
-func SaveBlockchain(genesisBlock *domain.Block) error {
+func NewBoltRepository() (*BoltRepository, error) {
 	db, err := bolt.Open(dbFile, 0600, nil)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = db.Update(func(tx *bolt.Tx) error {
+	repository := &BoltRepository{
+		db: db,
+	}
+
+	return repository, nil
+}
+
+func (repo *BoltRepository) SaveBlockchain(genesisBlock *domain.Block) error {
+	err := repo.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(blocksBucket))
 
 		if bucket == nil {
@@ -47,14 +59,8 @@ func SaveBlockchain(genesisBlock *domain.Block) error {
 	return nil
 }
 
-func InsertBlock(block *domain.Block) error {
-	db, err := bolt.Open(dbFile, 0600, nil)
-
-	if err != nil {
-		return err
-	}
-
-	db.Update(func(tx *bolt.Tx) error {
+func (repo *BoltRepository) InsertBlock(block *domain.Block) error {
+	repo.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(blocksBucket))
 		err := bucket.Put(block.Hash, block.Serialize())
 		if err != nil {
@@ -69,23 +75,13 @@ func InsertBlock(block *domain.Block) error {
 		return nil
 	})
 
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
-func GetLastHash() ([]byte, error) {
-	db, err := bolt.Open(dbFile, 0600, nil)
-
-	if err != nil {
-		return nil, err
-	}
-
+func (repo *BoltRepository) GetLastHash() ([]byte, error) {
 	var lastHash []byte
 
-	err = db.View(func(tx *bolt.Tx) error {
+	err := repo.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(([]byte(blocksBucket)))
 		lastHash = bucket.Get([]byte("l"))
 
@@ -97,4 +93,22 @@ func GetLastHash() ([]byte, error) {
 	}
 
 	return lastHash, nil
+}
+
+func (repo *BoltRepository) GetBlock(blockHash []byte) (*domain.Block, error) {
+	var block *domain.Block
+
+	err := repo.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(([]byte(blocksBucket)))
+		encodedBlock := bucket.Get(blockHash)
+		block = domain.DeserializeBLock(encodedBlock)
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return block, nil
 }

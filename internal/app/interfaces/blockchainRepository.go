@@ -6,4 +6,5 @@ type BlockchainRepository interface {
 	SaveBlockchain(genesisBlock *domain.Block) error
 	InsertBlock(block *domain.Block) error
 	GetLastHash() ([]byte, error)
+	GetBlock(blockHash []byte) (*domain.Block, error)
 }
