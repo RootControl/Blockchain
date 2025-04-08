@@ -7,4 +7,5 @@ type BlockchainRepository interface {
 	InsertBlock(block *domain.Block) error
 	GetLastHash() ([]byte, error)
 	GetBlock(blockHash []byte) (*domain.Block, error)
+	Close()
 }

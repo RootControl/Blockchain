@@ -28,6 +28,10 @@ func NewBoltRepository() (*BoltRepository, error) {
 	return repository, nil
 }
 
+func (repo *BoltRepository) Close() {
+	repo.db.Close()
+}
+
 func (repo *BoltRepository) SaveBlockchain(genesisBlock *domain.Block) error {
 	err := repo.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(blocksBucket))
@@ -82,7 +86,10 @@ func (repo *BoltRepository) GetLastHash() ([]byte, error) {
 	var lastHash []byte
 
 	err := repo.db.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(([]byte(blocksBucket)))
+		bucket := tx.Bucket([]byte(blocksBucket))
+		if bucket == nil {
+			return nil
+		}
 		lastHash = bucket.Get([]byte("l"))
 
 		return nil
