@@ -31,3 +31,7 @@ func NewTransaction(id []byte, txInputs []*transactions.TxInput, txOutputs []*tr
 		TxOutputs: txOutputs,
 	}
 }
+
+func (tx *Transaction) IsCoinbase() bool {
+	return len(tx.TxInputs) == 1 && len(tx.TxInputs[0].TxId) == 0 && tx.TxInputs[0].Vout == -1
+}

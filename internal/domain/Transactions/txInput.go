@@ -13,3 +13,7 @@ func NewTxInput(id []byte, vOut int, script string) *TxInput {
 		ScriptSig: script,
 	}
 }
+
+func (input *TxInput) CanUnlockOutputWith(unlockingData string) bool {
+	return input.ScriptSig == unlockingData
+}

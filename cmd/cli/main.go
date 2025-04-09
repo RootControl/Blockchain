@@ -26,7 +26,7 @@ func main() {
 
 func NewCLI(repository interfaces.BlockchainRepository) *CLI {
 	return &CLI {
-		BlockchainService: services.NewBlockchainService(repository),
+		//BlockchainService: services.NewBlockchainService(repository, ""),
 		Repository: &repository,
 	}
 }
@@ -36,14 +36,18 @@ func (cli *CLI) Run() {
 
 	addBlockCmd := flag.NewFlagSet("addblock", flag.ExitOnError)
 	printChainCmd := flag.NewFlagSet("printchain", flag.ExitOnError)
+	getBalanceCmd := flag.NewFlagSet("getbalance", flag.ExitOnError)
 
 	addBlockData := addBlockCmd.String("data", "", "Block data")
+	getBalanceData := getBalanceCmd.String("address", "", "Transaction address")
 
 	switch os.Args[1] {
 	case "addblock":
 		addBlockCmd.Parse(os.Args[2:])
 	case "printchain":
 		printChainCmd.Parse(os.Args[2:])
+	case "getbalance":
+		getBalanceCmd.Parse(os.Args[2:])
 	default:
 		cli.PrintUsage()
 		os.Exit(1)
@@ -60,6 +64,15 @@ func (cli *CLI) Run() {
 	if printChainCmd.Parsed() {
 		cli.PrintChain()
 	}
+
+	if getBalanceCmd.Parsed() {
+		if *getBalanceData == "" {
+			getBalanceCmd.Usage()
+			os.Exit(1)
+		}
+
+		cli.GetBalance(*getBalanceData)
+	}
 }
 
 func (cli *CLI) ValidateArgs() {
@@ -73,6 +86,7 @@ func (cli *CLI) PrintUsage() {
 	fmt.Println("Usage:")
 	fmt.Println("  addblock -data BLOCK_DATA - add a block to the blockchain")
 	fmt.Println("  printchain - print the blocks in the blockchain")
+	fmt.Println("  getbalance -address ADDRESS - get balance for an address")
 }
 
 func (cli *CLI) AddBlock(data string) {
@@ -95,7 +109,6 @@ func (cli *CLI) PrintChain() {
 		block := iterator.NextBlock()
 
 		fmt.Printf("Prev. hash: %x\n", block.PrevBlockHash)
-		fmt.Printf("Data: %s\n", block.Data)
 		fmt.Printf("Hash: %x\n", block.Hash)
 		fmt.Println()
 
@@ -103,4 +116,12 @@ func (cli *CLI) PrintChain() {
 			break
 		}
 	}
+}
+
+func (cli *CLI) GetBalance(address string) {
+	cli.BlockchainService = services.NewBlockchainService(*cli.Repository, address)
+	txService := services.NewTransactionService(*cli.Repository, cli.BlockchainService.Blockchain.LastHash)
+	balance := txService.GetBalance(address)
+
+	fmt.Printf("Balance of '%s': %d\n", address, balance)
 }

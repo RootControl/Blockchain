@@ -11,3 +11,7 @@ func NewTxOutput(value int, script string) *TxOutput {
 		ScriptPubKey: script,
 	}
 }
+
+func (output *TxOutput) CanBeUnlockedWith(unlockingData string) bool {
+	return output.ScriptPubKey == unlockingData
+}

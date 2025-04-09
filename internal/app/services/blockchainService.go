@@ -10,14 +10,14 @@ const genesisCoinbaseData = "In the grim darkness of the far future, the is only
 type BlockchainService struct {
 	Repository interfaces.BlockchainRepository
 	Blockchain *domain.Blockchain
-	Address string
+	Address    string
 }
 
 func NewBlockchainService(repo interfaces.BlockchainRepository, address string) *BlockchainService {
 	service := &BlockchainService{
 		Repository: repo,
 		Blockchain: domain.NewBlockchain(),
-		Address: address,
+		Address:    address,
 	}
 
 	dbLastHash, err := service.Repository.GetLastHash()
@@ -43,7 +43,7 @@ func (service *BlockchainService) CreateBlockchain() *domain.Blockchain {
 }
 
 func (service *BlockchainService) AddBlock(data string) error {
-	block := domain.NewBlock(data, service.Blockchain.LastHash)
+	block := domain.NewBlock([]*domain.Transaction{}, service.Blockchain.LastHash)
 
 	err := service.Repository.InsertBlock(block)
 	if err != nil {
