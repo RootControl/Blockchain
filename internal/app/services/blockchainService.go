@@ -42,8 +42,8 @@ func (service *BlockchainService) CreateBlockchain() *domain.Blockchain {
 	return bc
 }
 
-func (service *BlockchainService) AddBlock(data string) error {
-	block := domain.NewBlock([]*domain.Transaction{}, service.Blockchain.LastHash)
+func (service *BlockchainService) MineBlock(transactions []*domain.Transaction) error {
+	block := domain.NewBlock(transactions, service.Blockchain.LastHash)
 
 	err := service.Repository.InsertBlock(block)
 	if err != nil {

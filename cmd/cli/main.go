@@ -7,6 +7,7 @@ import (
 
 	"github.com/rootcontrol/blockchain/internal/app/interfaces"
 	"github.com/rootcontrol/blockchain/internal/app/services"
+	"github.com/rootcontrol/blockchain/internal/domain"
 	"github.com/rootcontrol/blockchain/internal/infra/storage"
 )
 
@@ -34,16 +35,18 @@ func NewCLI(repository interfaces.BlockchainRepository) *CLI {
 func (cli *CLI) Run() {
 	cli.ValidateArgs()
 
-	addBlockCmd := flag.NewFlagSet("addblock", flag.ExitOnError)
+	sendCmd := flag.NewFlagSet("send", flag.ExitOnError)
 	printChainCmd := flag.NewFlagSet("printchain", flag.ExitOnError)
 	getBalanceCmd := flag.NewFlagSet("getbalance", flag.ExitOnError)
 
-	addBlockData := addBlockCmd.String("data", "", "Block data")
+	sendData := sendCmd.String("from", "", "Transaction from")
+	sendTo := sendCmd.String("to", "", "Transaction to")
+	sendAmount := sendCmd.Int("amount", 0, "Transaction amount")
 	getBalanceData := getBalanceCmd.String("address", "", "Transaction address")
 
 	switch os.Args[1] {
-	case "addblock":
-		addBlockCmd.Parse(os.Args[2:])
+	case "send":
+		sendCmd.Parse(os.Args[2:])
 	case "printchain":
 		printChainCmd.Parse(os.Args[2:])
 	case "getbalance":
@@ -53,12 +56,12 @@ func (cli *CLI) Run() {
 		os.Exit(1)
 	}
 
-	if addBlockCmd.Parsed() {
-		if *addBlockData == "" {
-			addBlockCmd.Usage()
+	if sendCmd.Parsed() {
+		if *sendData == "" || *sendTo == "" || *sendAmount == 0 {
+			sendCmd.Usage()
 			os.Exit(1)
 		}
-		cli.AddBlock(*addBlockData)
+		cli.Send(*sendData, *sendTo, *sendAmount)
 	}
 
 	if printChainCmd.Parsed() {
@@ -84,13 +87,17 @@ func (cli *CLI) ValidateArgs() {
 
 func (cli *CLI) PrintUsage() {
 	fmt.Println("Usage:")
-	fmt.Println("  addblock -data BLOCK_DATA - add a block to the blockchain")
+	fmt.Println("  send -from FROM -to TO -amount AMOUNT - send AMOUNT of coins from FROM address to TO")
 	fmt.Println("  printchain - print the blocks in the blockchain")
 	fmt.Println("  getbalance -address ADDRESS - get balance for an address")
 }
 
-func (cli *CLI) AddBlock(data string) {
-	err := cli.BlockchainService.AddBlock(data)
+func (cli *CLI) Send(from, to string, amount int) {
+	cli.BlockchainService = services.NewBlockchainService(*cli.Repository, from)
+	txService := services.NewTransactionService(*cli.Repository, cli.BlockchainService.Blockchain.LastHash)
+	transactions := txService.NewUnspentTxOutput(from, to, amount)
+	
+	err := cli.BlockchainService.MineBlock([]*domain.Transaction{transactions})
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
