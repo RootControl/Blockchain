@@ -6,7 +6,7 @@ import (
 
 	"github.com/rootcontrol/blockchain/internal/app/interfaces"
 	"github.com/rootcontrol/blockchain/internal/domain"
-	transactions "github.com/rootcontrol/blockchain/internal/domain/Transactions"
+	"github.com/rootcontrol/blockchain/pkg/utils"
 )
 
 type TransactionService struct {
@@ -32,13 +32,14 @@ func (service *TransactionService) GetBalance(address string) int {
 	return balance
 }
 
-func (service *TransactionService) FindUnspentTxOutputs(address string) []transactions.TxOutput {
-	var unspentTxOutputs []transactions.TxOutput
+func (service *TransactionService) FindUnspentTxOutputs(address string) []domain.TxOutput {
+	var unspentTxOutputs []domain.TxOutput
 	unspentTransactions := service.FindUnspentTransactions(address)
 
 	for _, tx := range unspentTransactions {
 		for _, output := range tx.TxOutputs {
-			if output.CanBeUnlockedWith(address) {
+			outputPubHash := output.CreateLockingScript([]byte(address))
+			if output.IsLockedWithKey(outputPubHash) {
 				unspentTxOutputs = append(unspentTxOutputs, *output)
 			}
 		}
@@ -69,14 +70,16 @@ func (service *TransactionService) FindUnspentTransactions(address string) []dom
 					}
 				}
 
-				if output.CanBeUnlockedWith(address) {
+				outputPubHash := output.CreateLockingScript([]byte(address))
+				if output.IsLockedWithKey(outputPubHash) {
 					unspentTxs = append(unspentTxs, *tx)
 				}
 			}
 
 			if !tx.IsCoinbase() {
 				for _, input := range tx.TxInputs {
-					if input.CanUnlockOutputWith(address) {
+					// TODO: alter validation because is not checking the correct PubKeyHash
+					if input.UsesKey(utils.Base58Encode(input.PublicKey)) {
 						inputTxId := hex.EncodeToString(input.TxId)
 						spentTxOutputs[inputTxId] = append(spentTxOutputs[inputTxId], input.Vout)
 					}
@@ -93,8 +96,8 @@ func (service *TransactionService) FindUnspentTransactions(address string) []dom
 }
 
 func (service *TransactionService) NewUnspentTxOutput(from, to string, amount int) *domain.Transaction {
-	var inputs []*transactions.TxInput
-	var outputs []*transactions.TxOutput
+	var inputs []*domain.TxInput
+	var outputs []*domain.TxOutput
 
 	accumulated, validOutputs := service.FindSpendableOutputs(from, amount)
 
@@ -107,18 +110,20 @@ func (service *TransactionService) NewUnspentTxOutput(from, to string, amount in
 		txId, _ := hex.DecodeString(txIndex)
 
 		for _, out := range outs {
-			input := transactions.NewTxInput(txId, out, from)
+			input := domain.NewTxInput(txId, out, []byte(from))
 			inputs = append(inputs, input)
 		}
 	}
 
 	// Build a list of outputs
-	output := transactions.NewTxOutput(amount, to)
+	output := domain.NewTxOutput(amount)
+	output.Lock([]byte(to))
 	outputs = append(outputs, output)
 
 	// Create new TxOutput for the change
 	if accumulated > amount {
-		out := transactions.NewTxOutput(accumulated - amount, from)
+		out := domain.NewTxOutput(accumulated - amount)
+		out.Lock([]byte(from))
 		outputs = append(outputs, out)
 	}
 
@@ -138,7 +143,8 @@ Work:
 		txId := hex.EncodeToString(tx.Id)
 
 		for outIndex, output := range tx.TxOutputs {
-			if output.CanBeUnlockedWith(address) && accumulated < amount {
+			outputPubHash := output.CreateLockingScript([]byte(address))
+			if output.IsLockedWithKey(outputPubHash) && accumulated < amount {
 				accumulated += output.Value
 				unspentOutputs[txId] = append(unspentOutputs[txId], outIndex)
 

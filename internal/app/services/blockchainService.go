@@ -5,8 +5,6 @@ import (
 	"github.com/rootcontrol/blockchain/internal/domain"
 )
 
-const genesisCoinbaseData = "In the grim darkness of the far future, the is only war!"
-
 type BlockchainService struct {
 	Repository interfaces.BlockchainRepository
 	Blockchain *domain.Blockchain
@@ -34,7 +32,7 @@ func NewBlockchainService(repo interfaces.BlockchainRepository, address string) 
 func (service *BlockchainService) CreateBlockchain() *domain.Blockchain {
 	bc := domain.NewBlockchain()
 
-	coinbase := domain.NewCoinbaseTx(service.Address, genesisCoinbaseData)
+	coinbase := domain.NewCoinbaseTx(service.Address)
 	genesisBlock := domain.NewGenesisBlock(coinbase)
 	service.Repository.SaveBlockchain(genesisBlock)
 	bc.SetLastHash(genesisBlock.Hash)
