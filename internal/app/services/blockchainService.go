@@ -1,6 +1,8 @@
 package services
 
 import (
+	"errors"
+
 	"github.com/rootcontrol/blockchain/internal/app/interfaces"
 	"github.com/rootcontrol/blockchain/internal/domain"
 )
@@ -41,6 +43,14 @@ func (service *BlockchainService) CreateBlockchain() *domain.Blockchain {
 }
 
 func (service *BlockchainService) MineBlock(transactions []*domain.Transaction) error {
+	txService := NewTransactionService(service.Repository, service.Blockchain.LastHash)
+
+	for _, tx := range transactions {
+		if !txService.VerifyTransaction(tx) {
+			return errors.New("ERROR: Invalid transaction")
+		}
+	}
+
 	block := domain.NewBlock(transactions, service.Blockchain.LastHash)
 
 	err := service.Repository.InsertBlock(block)

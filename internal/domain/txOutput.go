@@ -11,9 +11,10 @@ type TxOutput struct {
 	PublicKeyHash []byte
 }
 
-func NewTxOutput(value int) *TxOutput {
+func NewTxOutput(value int, publicKeyHash []byte) *TxOutput {
 	return &TxOutput{
 		Value: value,
+		PublicKeyHash: publicKeyHash,
 	}
 }
 

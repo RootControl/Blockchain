@@ -1,7 +1,10 @@
 package services
 
 import (
+	"bytes"
+	"crypto/ecdsa"
 	"encoding/hex"
+	"errors"
 	"log"
 
 	"github.com/rootcontrol/blockchain/internal/app/interfaces"
@@ -115,19 +118,21 @@ func (service *TransactionService) NewUnspentTxOutput(from, to string, amount in
 	}
 
 	// Build a list of outputs
-	output := domain.NewTxOutput(amount)
+	output := domain.NewTxOutput(amount, nil)
 	output.Lock([]byte(to))
 	outputs = append(outputs, output)
 
 	// Create new TxOutput for the change
 	if accumulated > amount {
-		out := domain.NewTxOutput(accumulated - amount)
+		out := domain.NewTxOutput(accumulated - amount, nil)
 		out.Lock([]byte(from))
 		outputs = append(outputs, out)
 	}
 
 	transaction := domain.NewTransaction(nil, inputs, outputs)
 	transaction.SetId()
+	// TODO: Add Get wallet from sender
+	// service.SignTransaction(transaction, domain.Wallet.PrivateKey)
 
 	return transaction
 }
@@ -155,4 +160,52 @@ Work:
 	}
 
 	return accumulated, unspentOutputs
+}
+
+func (service *TransactionService) FindTransaction(id []byte) (domain.Transaction, error) {
+	iterator := NewIteratorService(service.Repository, service.CurrentHash)
+
+	for {
+		block := iterator.NextBlock()
+
+		for _, tx := range block.Transactions {
+			if bytes.Equal(tx.Id, id) {
+				return *tx, nil
+			}
+		}
+
+		if len(block.PrevBlockHash) == 0 {
+			break
+		}
+	}
+
+	return domain.Transaction{}, errors.New("transaction not found")
+}
+
+func (service *TransactionService) SignTransaction(tx *domain.Transaction, privateKey ecdsa.PrivateKey) {
+	prevTxs := service.GetPreviousTransactions(tx)
+
+	tx.Sign(privateKey, prevTxs)
+}
+
+func (service *TransactionService) VerifyTransaction(tx *domain.Transaction) bool {
+	prevTxs := service.GetPreviousTransactions(tx)
+
+	return tx.Verify(prevTxs)
+}
+
+func (service *TransactionService) GetPreviousTransactions(tx *domain.Transaction) map[string]domain.Transaction {
+	prevTxs := make(map[string]domain.Transaction)
+
+	for _, input := range tx.TxInputs {
+		prevTx, err := service.FindTransaction(input.TxId)
+
+		if err != nil {
+			log.Panic(err)
+		}
+
+		prevTxs[hex.EncodeToString(prevTx.Id)] = prevTx
+	}
+
+	return prevTxs
 }
