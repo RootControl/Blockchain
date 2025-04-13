@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"crypto/sha256"
-
 	"github.com/mr-tron/base58"
 )
 
@@ -13,11 +11,7 @@ func Base58Encode(input []byte) []byte {
 }
 
 func HashPublicKey(pubKey []byte) []byte {
-	publicSha256 := sha256.Sum256(pubKey)
-
-	hasher := sha256.New()
-	hasher.Write(publicSha256[:])
-	publicHash := hasher.Sum(nil)
+	publicHash := Base58Encode(pubKey)
 
 	return publicHash
 }

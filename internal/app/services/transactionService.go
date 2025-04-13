@@ -78,8 +78,7 @@ func (service *TransactionService) FindUnspentTransactions(address string) []dom
 
 			if !tx.IsCoinbase() {
 				for _, input := range tx.TxInputs {
-					// TODO: alter validation because is not checking the correct PubKeyHash
-					if input.UsesKey(utils.Base58Encode(input.PublicKey)) {
+					if input.UsesKey(utils.Base58Encode([]byte(address))) {
 						inputTxId := hex.EncodeToString(input.TxId)
 						spentTxOutputs[inputTxId] = append(spentTxOutputs[inputTxId], input.Vout)
 					}
