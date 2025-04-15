@@ -13,7 +13,7 @@ import (
 
 type CLI struct {
 	BlockchainService *services.BlockchainService
-	Repository *interfaces.BlockchainRepository
+	Repository interfaces.BlockchainRepository
 }
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
 func NewCLI(repository interfaces.BlockchainRepository) *CLI {
 	return &CLI {
 		//BlockchainService: services.NewBlockchainService(repository, ""),
-		Repository: &repository,
+		Repository: repository,
 	}
 }
 
@@ -79,6 +79,7 @@ func (cli *CLI) Run() {
 
 	if createWalletCmd.Parsed() {
 		wallet := domain.NewWallet()
+		cli.Repository.SaveWallet(wallet)
 		fmt.Printf("%s\n", wallet.GetAddress())
 	}
 
@@ -88,7 +89,7 @@ func (cli *CLI) Run() {
 			os.Exit(1)
 		}
 
-		cli.BlockchainService = services.NewBlockchainService(*cli.Repository, *createBlockchainData)
+		cli.BlockchainService = services.NewBlockchainService(cli.Repository, *createBlockchainData)
 	}
 }
 
@@ -108,8 +109,8 @@ func (cli *CLI) PrintUsage() {
 }
 
 func (cli *CLI) Send(from, to string, amount int) {
-	cli.BlockchainService = services.NewBlockchainService(*cli.Repository, from)
-	txService := services.NewTransactionService(*cli.Repository, cli.BlockchainService.Blockchain.LastHash)
+	cli.BlockchainService = services.NewBlockchainService(cli.Repository, from)
+	txService := services.NewTransactionService(cli.Repository, cli.BlockchainService.Blockchain.LastHash)
 	transactions := txService.NewUnspentTxOutput(from, to, amount)
 	
 	err := cli.BlockchainService.MineBlock([]*domain.Transaction{transactions})
@@ -123,7 +124,7 @@ func (cli *CLI) Send(from, to string, amount int) {
 
 func (cli *CLI) PrintChain() {
 	iterator := services.NewIteratorService(
-		*cli.Repository,
+		cli.Repository,
 		cli.BlockchainService.Blockchain.LastHash,
 	)
 
@@ -141,8 +142,8 @@ func (cli *CLI) PrintChain() {
 }
 
 func (cli *CLI) GetBalance(address string) {
-	cli.BlockchainService = services.NewBlockchainService(*cli.Repository, address)
-	txService := services.NewTransactionService(*cli.Repository, cli.BlockchainService.Blockchain.LastHash)
+	cli.BlockchainService = services.NewBlockchainService(cli.Repository, address)
+	txService := services.NewTransactionService(cli.Repository, cli.BlockchainService.Blockchain.LastHash)
 	balance := txService.GetBalance(address)
 
 	fmt.Printf("Balance of '%s': %d\n", address, balance)

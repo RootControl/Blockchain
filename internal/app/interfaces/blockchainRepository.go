@@ -8,4 +8,6 @@ type BlockchainRepository interface {
 	GetLastHash() ([]byte, error)
 	GetBlock(blockHash []byte) (*domain.Block, error)
 	Close()
+	SaveWallet(wallet *domain.Wallet) error
+	GetWallet(address string) (*domain.Wallet, error)
 }

@@ -12,6 +12,7 @@ type BoltRepository struct {
 const (
 	dbFile       = "blockchain.db"
 	blocksBucket = "blocks"
+	walletsBucket = "wallets"
 )
 
 func NewBoltRepository() (*BoltRepository, error) {
@@ -118,4 +119,40 @@ func (repo *BoltRepository) GetBlock(blockHash []byte) (*domain.Block, error) {
 	}
 
 	return block, nil
+}
+
+func (repo *BoltRepository) SaveWallet(wallet *domain.Wallet) error {
+	err := repo.db.Update(func(tx *bolt.Tx) error {
+		bucket, err := tx.CreateBucketIfNotExists([]byte(walletsBucket))
+		if err != nil {
+			return err
+		}
+
+		err = bucket.Put(wallet.GetAddress(), wallet.Serialize())
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return err
+}
+
+func (repo *BoltRepository) GetWallet(address string) (*domain.Wallet, error) {
+	var wallet *domain.Wallet
+
+	err := repo.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(walletsBucket))
+		encodedWallet := bucket.Get([]byte(address))
+
+		wallet = domain.DeserializeWallet(encodedWallet)
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return wallet, nil
 }

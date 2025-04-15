@@ -131,8 +131,13 @@ func (service *TransactionService) NewUnspentTxOutput(from, to string, amount in
 
 	transaction := domain.NewTransaction(nil, inputs, outputs)
 	transaction.SetId()
-	// TODO: Add Get wallet from sender
-	// service.SignTransaction(transaction, domain.Wallet.PrivateKey)
+	
+	wallet, err := service.Repository.GetWallet(from)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	service.SignTransaction(transaction, wallet.PrivateKey)
 
 	return transaction
 }
